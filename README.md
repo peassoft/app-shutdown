@@ -1,6 +1,6 @@
 # @peassoft/app-shutdown
 
-This module provides a class that helps organize an application gracefull shutdown process in a sequence meaningful for that application.
+This module provides a class that helps organize an application gracefull shutdown flow in a sequence meaningful for that application.
 
 ## Installation
 
@@ -34,7 +34,8 @@ const appShutdown = new AppShutdown(
     ],
   ],
   {
-    // After this timeout, the process will be terminated even if ....
+    // After this timeout, the process will be terminated even if not all clean-up steps have
+    // finished.
     timeoutMs: 20_000,
   },
 );
@@ -43,39 +44,60 @@ process.on('SIGINT', () => void appShutdown.shutdown(0));
 process.on('SIGTERM', () => void appShutdown.shutdown(0));
 
 process.on('uncaughtException', err => {
-  youLlogger(err);
+  yourLogger(err);
   void appShutdown.shutdown(1);
 });
 ```
 
-
-
-
-
-
-
-
-
 ## API Reference
 
-### `stringifyError(err: Error | DOMException) => string`
+### `ShutdownStep`
 
-Stringify an Error or DOMException object.
+```ts
+type ShutdownStep = ShutdownFn | ShutdownFn[] | WithShutdown | WithShutdown[];
+
+type ShutdownFn = () => Promise<unknown>;
+
+interface WithShutdown {
+  shutdown(): Promise<unknown>;
+}
+```
+
+A shutdown step may be a function returning a `Promise<void>`, or an object that has a `shutdown` method returning a `Promise<void>`, or an array of such functions and/or objects.
+
+All steps a executed serially (one after another) in the order they are passed in the constructor. If a step is an array, all elements of the array are executed in-parallel (using `Promise.allSettled()`).
+
+Any promise rejections are caught and ignored.
+
+### `AppShutdownOptions`
+
+```ts
+type AppShutdownOptions = {
+  /**
+   * Timeout in milliseconds after which the process is exited without waiting remaining
+   * shutdown steps to complete. Optional. Defaults to `15_000`.
+   */
+  timeoutMs?: number;
+};
+```
+
+### `constructor(steps: ShutdownStep[], options?: AppShutdownOptions)`
+
+Class constructor.
+
+Although `AppShutdown` class does not prevent creating multiple instances, you'll definitely want to have a single instance per application.
+
+### Instance Methods
+
+#### `shutdown(exitCode?: number) => Promise<void>`
+
+Execute graceful shutdown of the application.
+
+You can pass `exitCode` parameter; this value will be used as the process exit code. Defaults to `0`.
 
 
+## Other Considerations
 
+### Timeouts
 
-/**
- * Register steps of the shutdown process.
- *
- * All steps will be executed serially, in order they are passed. If a step is an array,
- * its members will by executed in parallel.
- *
- * @example
- * ```ts
- * registerShutdownSteps(1, 2, 3, 4); // 1 -> 2 -> 3 -> 4 (serially)
- * registerShutdownSteps([1, 2, 3, 4]); // 1/2/3/4 (in parallel)
- * registerShutdownSteps([1, 2], 3, 4); // 1/2 -> 3 -> 4
- * registerShutdownSteps([1, 2], [3, 4]); // 1/2 -> 3/4
- * ```
- */
+You should implement meaningful timeouts for each shutdown step (out of scope of this module), as well as tune the overall shutdown timeout (passed in the constructor of `AppShutdown`) to be grater than the estimated sum of timeouts of all shutdown steps (taking into account possible parallel execution).

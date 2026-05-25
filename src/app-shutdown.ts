@@ -81,18 +81,20 @@ export class AppShutdown {
       this.#options.timeoutMs,
     );
 
-    try {
-      for (const step of this.#steps) {
-        if (Array.isArray(step)) {
-          await Promise.allSettled(step.map(s => this.#exec(s)));
-        } else {
+    for (const step of this.#steps) {
+      if (Array.isArray(step)) {
+        await Promise.allSettled(step.map(s => this.#exec(s)));
+      } else {
+        try {
           await this.#exec(step);
+        } catch {
+          // Ignore any errors
         }
       }
-    } finally {
-      clearTimeout(timer);
-      process.exit(exitCode);
     }
+
+    clearTimeout(timer);
+    process.exit(exitCode);
   }
 
   #exec(item: ShutdownFn | WithShutdown): Promise<unknown> {

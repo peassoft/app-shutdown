@@ -19,7 +19,7 @@
   "homepage": "https://github.com/peassoft/app-shutdown",
   "repository": {
     "type": "git",
-    "url": "https://github.com/peassoft/app-shutdown"
+    "url": "git+https://github.com/peassoft/app-shutdown.git"
   },
   "bugs": {
     "url": "https://github.com/peassoft/app-shutdown/issues"
