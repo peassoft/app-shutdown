@@ -8,6 +8,7 @@
     "noImplicitReturns": true,
     "noUncheckedSideEffectImports": true,
 
+    "types": ["node"],
     "target": "es2024",
     "module": "nodenext",
     "moduleResolution": "nodenext",
