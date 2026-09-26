@@ -12,7 +12,7 @@ export type ShutdownFn = () => Promise<unknown>;
  * @public
  */
 export interface WithShutdown {
-  shutdown(): Promise<unknown>;
+  shutdown: () => Promise<unknown>;
 }
 
 /**
@@ -45,8 +45,8 @@ export type AppShutdownOptions = {
  * @public
  */
 export class AppShutdown {
-  #steps: ShutdownStep[];
-  #options: Required<AppShutdownOptions>;
+  readonly #steps: ShutdownStep[];
+  readonly #options: Required<AppShutdownOptions>;
 
   #isTerminating = false;
 
@@ -71,7 +71,7 @@ export class AppShutdown {
    *
    * @public
    */
-  async shutdown(exitCode: number = 0): Promise<void> {
+  async shutdown(exitCode = 0): Promise<void> {
     if (this.#isTerminating) return;
 
     this.#isTerminating = true;
